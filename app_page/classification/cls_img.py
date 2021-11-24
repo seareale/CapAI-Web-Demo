@@ -13,13 +13,7 @@ from utils.general import get_markdown
 
 
 def run_cls_img():
-<<<<<<< HEAD
-
-    readme_text = st.markdown(get_markdown("empty.md"), unsafe_allow_html=True)
-=======
-    
     st.title("Transition Classification")
->>>>>>> 33e6c63e9dcd24948b69f6274e5f937f72286224
     model_type = frame_selector_ui()
 
     uploaded_file = st.file_uploader("Upload a image", ["jpg", "jpeg", "png"])
