@@ -11,4 +11,4 @@ data/
 # model
 */yolov5/
 */swin_htc/
-*/weights/
+*.pt
