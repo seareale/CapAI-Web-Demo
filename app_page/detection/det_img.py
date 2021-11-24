@@ -116,11 +116,13 @@ def load_model(model_name="yolov5", half=True):
         if model_name == "yolov5":
             model = torch.load(path, map_location=device)["model"].float()
         elif model_name == "swin_htc":
+            from mmcv import Config
             from mmdet.apis import init_detector
 
             config = "models/swin_htc/htc_swin_cascade_fpn.py"
+            classes = Config.fromfile(config).classes
             model = init_detector(config, path, device=device)
-            # model.CLASSES = classes
+            model.CLASSES = classes
         else:
             pass
             # model = torch.load(path, map_location=device).float()
