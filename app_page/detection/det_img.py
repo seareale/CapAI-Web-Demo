@@ -65,6 +65,9 @@ def run_det_img():
         with col:
             st.image(img_bboxes, use_column_width=True)  # display input image
 
+    elif uploaded_file is None:
+        st.info("Check the Image format (e.g. jpg, jpeg, png)")
+
 
 def frame_selector_ui():
     model_list = list(Path("models/weights").glob("*.pt"))
