@@ -15,9 +15,8 @@ from utils.general import get_markdown
 
 def run_cls_img():
     
-    readme_text = st.markdown(get_markdown("empty.md"), unsafe_allow_html=True)
+    st.title("Transition Classification")
     model_type = frame_selector_ui()
-    st.markdown(model_type, unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader("Upload a image", ["jpg", "jpeg", "png"])
     net, device = load_model(model_type)
@@ -28,7 +27,7 @@ def run_cls_img():
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         opencv_image = cv2.imdecode(file_bytes, 1)
 
-        img_path = f"data/classification/{uploaded_file.name}"
+        img_path = f"data/{uploaded_file.name}"
         cv2.imwrite(img_path, opencv_image)
         img_org = cv2.imread(img_path)
         img_org = cv2.cvtColor(img_org, cv2.COLOR_BGR2RGB)
