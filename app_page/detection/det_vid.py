@@ -20,18 +20,34 @@ def run_det_vid():
 
     # file upload
     uploaded_vid = st.file_uploader("Upload a video", ["mp4"])
-    cap = cv2.VideoCapture(uploaded_vid)
+    # cap = cv2.VideoCapture(uploaded_vid)
+
+    # tfile = tempfile.NamedTemporaryFile(delete=False)
+    # tfile.write(f.read())
+
+    # vf = cv.VideoCapture(tfile.name)
+
+    # stframe = st.empty()
+
+    # while vf.isOpened():
+    #     ret, frame = vf.read()
+    #     # if frame is read correctly ret is True
+    #     if not ret:
+    #         print("Can't receive frame (stream end?). Exiting ...")
+    #         break
+    #     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    #     stframe.image(gray)
 
     # dvide container into two parts
     _, col, _ = st.columns([1, 8, 1])
 
-    if uploaded_file is not None:  # inference
-        bytes_data = uploaded_file.getvalue()
+    if uploaded_vid is not None:  # inference
+        bytes_data = uploaded_vid.getvalue()
         decoded = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), -1)
 
         # load a image
         os.makedirs("data", exist_ok=True)
-        img_path = f"data/{uploaded_file.name}"
+        img_path = f"data/{uploaded_vid.name}"
         cv2.imwrite(img_path, decoded)
         img_org = cv2.imread(img_path)
         img_org = cv2.cvtColor(img_org, cv2.COLOR_BGR2RGB)
@@ -67,7 +83,7 @@ def run_det_vid():
         with col:
             st.image(img_bboxes, use_column_width=True)  # display input image
 
-    elif uploaded_file is None:
+    elif uploaded_vid is None:
         st.info("Check the Image format (e.g. mp4)")
 
 
@@ -101,75 +117,7 @@ def load_model(model_name="yolov5", half=True):
 
     path = "models/weights/" + model_name + ".pt"
 
-    # for check GPU Memory
-    nvidia_smi.nvmlInit()
-    handle = nvidia_smi.nvmlDeviceGetHandleByIndex(0)
-
-    # load model
-    MEGABYTES = 2.0 ** 20.0
-    weights_warning, progress_bar = None, None
-    used_memory_temp = 0
-    try:
-        weights_warning = st.warning("Loading %s..." % path)
-        progress_bar = st.progress(0)
-
-        # for import model library
-        sys.path.append(f"./models")
-        sys.path.append(f"./models/{model_name}")
-
-        ###############################################################################
-        if model_name == "yolov5":
-            model = torch.load(path, map_location=device)["model"].float()
-        elif model_name == "swin_htc":
-            from mmcv import Config
-            from mmdet.apis import init_detector
-
-            config = "models/swin_htc/htc_swin_cascade_fpn.py"
-            classes = Config.fromfile(config).classes
-            model = init_detector(config, path, device=device)
-            model.CLASSES = classes
-        else:
-            pass
-            # model = torch.load(path, map_location=device).float()
-        ###############################################################################
-
-        while True:
-            info = nvidia_smi.nvmlDeviceGetMemoryInfo(handle)
-            used_memory = info.used / MEGABYTES
-            total_memory = info.free / MEGABYTES
-
-            if used_memory_temp == used_memory:
-                break
-
-            used_memory_temp = used_memory
-
-            # We perform animation by overwriting the elements.
-            weights_warning.warning(
-                "Loading %s... (%6.2f/%6.2f MB)" % (path, used_memory, total_memory)
-            )
-            progress_bar.progress(min(used_memory / total_memory, 1.0))
-
-    finally:
-        ###############################################################################
-        if model_name == "yolov5":
-            from models.yolov5 import yolov5
-
-            # for inference
-            model.eval()
-            if half:
-                model.half()
-            # for warming up
-            model(
-                torch.zeros(1, 3, yolov5.IMG_SIZE, yolov5.IMG_SIZE)
-                .to(device)
-                .type_as(next(model.parameters()))
-            )
-        ###############################################################################
-
-        if weights_warning is not None:
-            weights_warning.empty()
-        if progress_bar is not None:
-            progress_bar.empty()
+    ###
 
     load_model_list[model_name] = model
 
