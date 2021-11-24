@@ -2,7 +2,7 @@
 
 <br/>
 
-This project demonstrates object detection models([YOLOv5](https://github.com/ultralytics/yolov5), [Swin Transformer](https://github.com/SwinTransformer/Swin-Transformer-Object-Detection)) and classification model([ResNet](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py)) into an interactive [Streamlit](https://streamlit.io) app.
+This project demonstrates object detection models([YOLOv5](https://github.com/ultralytics/yolov5), [Swin Transformer](https://github.com/SwinTransformer/Swin-Transformer-Object-Detection)) and classification model([EfficientNet](https://github.com/lukemelas/EfficientNet-PyTorch)) into an interactive [Streamlit](https://streamlit.io) app.
 
 <br/>
 

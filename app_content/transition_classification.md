@@ -7,12 +7,6 @@ In transition classification, the inference results of image and video are shown
 
 👈 **Please select "Image" or "Video" in the "Task" sidebar to start.**
 
-<br/>
-
-### Run
-```bash
-$ 
-```
 
 <br/>
 
