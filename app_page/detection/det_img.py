@@ -118,7 +118,7 @@ def load_model(model_name="yolov5", half=True):
         elif model_name == "swin_htc":
             from mmdet.apis import init_detector
 
-            config = "models/swin_htc/config/htc_swin_cascade_fpn.py"
+            config = "models/swin_htc/htc_swin_cascade_fpn.py"
             model = init_detector(config, path, device=device)
             # model.CLASSES = classes
         else:
