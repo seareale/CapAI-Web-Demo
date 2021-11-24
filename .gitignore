@@ -9,6 +9,4 @@ __pycache__/
 data/
 
 # model
-*/yolov5/
-*/swin_htc/
 *.pt
