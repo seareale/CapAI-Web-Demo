@@ -31,5 +31,5 @@ $ pip install -r requirements.txt
 
 <br/>
 
-**<div align="center">made by [Seareale](https://github.com/seareale) | [KVL Lab](http://vl.knu.ac.kr) | [KNU](http://knu.ac.kr)</div>**
+**<div align="center">made by [Seareale](https://github.com/seareale), [Jaebbb](https://github.com/jaebbb) | [KVL Lab](http://vl.knu.ac.kr) | [KNU](http://knu.ac.kr)</div>**
 
