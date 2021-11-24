@@ -20,6 +20,8 @@ def run_cls_img():
     net, device = load_model(model_type)
     label = {0: "06.stomach", 1: "07.intestineSS", 2: "08.intestineSF", 3: "09.intestineL"}
 
+    _, col1, col2, _ = st.columns([1, 4, 4, 1])
+
     if uploaded_file is not None:
         st.success("Success")
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
@@ -29,9 +31,10 @@ def run_cls_img():
         cv2.imwrite(img_path, opencv_image)
         img_org = cv2.imread(img_path)
         img_org = cv2.cvtColor(img_org, cv2.COLOR_BGR2RGB)
-
-        st.markdown("## Input Image")  # display input image
-        st.image(img_org)
+        
+        with col1:
+            st.markdown('## **<div align="center">Input image</div>**', unsafe_allow_html=True)  # display input image
+            st.image(img_org, use_column_width=True)
 
         img = image_preprocess(img_org)
         img = img.unsqueeze(0)
@@ -43,7 +46,7 @@ def run_cls_img():
             pred = pred.cpu().numpy()
             pred = int(pred[0])
             softmax = nn.Softmax(dim=1)
-            st.markdown(f"## Predicted class: {label[pred]}")
+            #st.markdown(f"## Predicted class: {label[pred]}")
 
             fig, ax = plt.subplots()
             x = range(len(softmax(output).cpu().numpy()[0]))
@@ -53,7 +56,10 @@ def run_cls_img():
             ax.set_xlabel("Class")
             ax.set_xticks([0, 1, 2, 3])
             ax.set_xticklabels(["06.stomach", "07.intestineSS", "08.intestineSF", "09.intestineL"])
-            st.pyplot(fig)
+
+            with col2:
+                st.markdown(f'## **<div align="center">Predicted class: {label[pred]} </div>**', unsafe_allow_html=True)
+                st.pyplot(fig)
 
     elif uploaded_file is None:
         st.info("Check the Image format (e.g. jpg, jpeg, png)")
