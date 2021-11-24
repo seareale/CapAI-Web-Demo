@@ -109,6 +109,7 @@ def load_model(model_name="yolov5", half=True):
         progress_bar = st.progress(0)
 
         # for import model library
+        sys.path.append(f"./models")
         sys.path.append(f"./models/{model_name}")
 
         ###############################################################################
