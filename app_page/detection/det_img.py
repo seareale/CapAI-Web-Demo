@@ -19,7 +19,7 @@ def run_det_img():
     model, device = load_model(model_name=model_type)
 
     # file upload
-    uploaded_file = st.file_uploader("Upload a image")
+    uploaded_file = st.file_uploader("Upload a image", ["jpg", "jpeg", "png"])
     # dvide container into two parts
     _, col, _ = st.columns([1, 8, 1])
 

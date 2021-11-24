@@ -1,21 +1,23 @@
-import streamlit as st
-from utils.general import get_markdown
 from pathlib import Path
-from efficientnet_pytorch import EfficientNet
+
+import cv2
+import numpy as np
+import streamlit as st
 import torch
 import torch.backends.cudnn as cudnn
-import  cv2
-import numpy as np 
+from efficientnet_pytorch import EfficientNet
+from utils.general import get_markdown
+
 
 def run_cls_img():
     readme_text = st.markdown(get_markdown("empty.md"), unsafe_allow_html=True)
     model_type = frame_selector_ui()
     st.markdown(model_type, unsafe_allow_html=True)
-    
-    uploaded_file = st.file_uploader("Upload a image", ["jpg","jpeg","png"])
+
+    uploaded_file = st.file_uploader("Upload a image", ["jpg", "jpeg", "png"])
     net, device = load_model(model_type)
     st.write(uploaded_file)
-    
+
     if uploaded_file is not None:
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         opencv_image = cv2.imdecode(file_bytes, 1)
@@ -26,7 +28,6 @@ def run_cls_img():
         img_org = cv2.cvtColor(img_org, cv2.COLOR_BGR2RGB)
 
         st.image(img_org)
-    
 
 
 def frame_selector_ui():
@@ -40,22 +41,18 @@ def frame_selector_ui():
     return model_type
 
 
-
 def load_model(model_name="efficientnet"):
     device = torch.device("cuda:0")
 
-
     path = "models/classification/" + model_name + ".pth"
 
-    if model_name == 'efficientnet':
-        net = EfficientNet.from_pretrained('efficientnet-b5', num_classes=4)
+    if model_name == "efficientnet":
+        net = EfficientNet.from_pretrained("efficientnet-b5", num_classes=4)
         net = net.to(device)
         net = torch.nn.DataParallel(net)
         cudnn.benchmark = True
         checkpoint = torch.load(path)
-        net.load_state_dict(checkpoint['net'])
+        net.load_state_dict(checkpoint["net"])
         net.eval()
-
-
 
     return net, device
