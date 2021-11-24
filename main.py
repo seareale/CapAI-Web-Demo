@@ -8,14 +8,16 @@ from utils.general import get_markdown
 
 
 def main():
+    st.set_page_config(layout="wide")
     readme_text = st.markdown(get_markdown("main.md"), unsafe_allow_html=True)
 
     st.sidebar.title("Menu")
     app_mode = st.sidebar.selectbox(
-        "Choose the menu", ["Main", "🔍 Lesion detection", "🔍Transition classification", "Show the source code"]
+        "Choose the menu",
+        ["Main", "🔍 Lesion detection", "🔍Transition classification", "Show the source code"],
     )
     if app_mode == "Main":
-        st.sidebar.success('To continue select any menu.')
+        st.sidebar.success("To continue select any menu.")
         os.system("./remove_cache.sh")
     elif app_mode == "🔍 Lesion detection":
         readme_text.empty()
@@ -26,7 +28,6 @@ def main():
     elif app_mode == "Show the source code":
         readme_text.empty()
         st.code(get_markdown("main.py", prefix="."))
-
 
 
 if __name__ == "__main__":
