@@ -19,7 +19,7 @@ def run_det_img():
     model, device = load_model(model_name=model_type)
 
     # file upload
-    uploaded_file = st.file_uploader("Upload a image")
+    uploaded_file = st.file_uploader("Upload a image", ["jpg", "jpeg", "png"])
     # dvide container into two parts
     _, col, _ = st.columns([1, 8, 1])
 
@@ -72,7 +72,7 @@ def frame_selector_ui():
 
     st.sidebar.markdown("# Options")
 
-    model_type = st.sidebar.selectbox("Select model", model_list, 0)
+    model_type = st.sidebar.selectbox("Select model", model_list, 1)
 
     conf_slider = st.sidebar.slider(
         "conf threshold", min_value=0.0, max_value=1.0, value=0.6, step=0.01
