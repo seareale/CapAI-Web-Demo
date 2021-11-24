@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -8,6 +9,7 @@ import streamlit as st
 import torch
 
 load_model_list = {}
+
 
 def run_det_img():
     # side bar
@@ -26,6 +28,7 @@ def run_det_img():
         decoded = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), -1)
 
         # load a image
+        os.makedirs("data", exist_ok=True)
         img_path = f"data/{uploaded_file.name}"
         cv2.imwrite(img_path, decoded)
         img_org = cv2.imread(img_path)
@@ -43,7 +46,7 @@ def run_det_img():
 
                 # image preprocessing
                 img = yolov5.preprocess_image(img_org, stride=int(model.stride.max()))
-                
+
                 # inferencem
                 pred = model(img.to(device))[0]
                 img_bboxes = yolov5.draw_image_with_boxes(
@@ -113,7 +116,7 @@ def load_model(model_name="yolov5", half=True):
             model = torch.load(path, map_location=device)["model"].float()
         elif model_name == "swin_htc":
             from mmdet.apis import init_detector
-            
+
             config = "models/swin_htc/config/htc_swin_cascade_fpn.py"
             model = init_detector(config, path, device=device)
             # model.CLASSES = classes
@@ -159,7 +162,7 @@ def load_model(model_name="yolov5", half=True):
             weights_warning.empty()
         if progress_bar is not None:
             progress_bar.empty()
-            
+
     load_model_list[model_name] = model
 
     return model, device
