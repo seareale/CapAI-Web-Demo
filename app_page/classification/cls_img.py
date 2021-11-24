@@ -28,7 +28,7 @@ def run_cls_img():
         img_path = f"data/{uploaded_file.name}"
         cv2.imwrite(img_path, opencv_image)
         img_org = cv2.imread(img_path)
-        # img_org = cv2.cvtColor(img_org, cv2.COLOR_BGR2RGB)
+        img_org = cv2.cvtColor(img_org, cv2.COLOR_BGR2RGB)
 
         st.markdown("## Input Image")  # display input image
         st.image(img_org)

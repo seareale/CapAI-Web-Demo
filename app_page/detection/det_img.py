@@ -21,7 +21,7 @@ def run_det_img():
     # file upload
     uploaded_file = st.file_uploader("Upload a image", ["jpg", "jpeg", "png"])
     # dvide container into two parts
-    _, col, _ = st.columns([1, 8, 1])
+    _, col1, col2, _ = st.columns([1, 4, 4, 1])
 
     if uploaded_file is not None:  # inference
         bytes_data = uploaded_file.getvalue()
@@ -33,10 +33,11 @@ def run_det_img():
         cv2.imwrite(img_path, decoded)
         img_org = cv2.imread(img_path)
         img_org = cv2.cvtColor(img_org, cv2.COLOR_BGR2RGB)
-        with col:
+        with col1:
             st.markdown('**<div align="center">Input image</div>**', unsafe_allow_html=True)
             st.image(img_org, use_column_width=True)  # display input image
-            st.markdown('<br/>**<div align="center">Output image</div>**', unsafe_allow_html=True)
+        with col2:
+            st.markdown('**<div align="center">Output image</div>**', unsafe_allow_html=True)
 
         ###############################################################################
         # inference results
@@ -62,7 +63,7 @@ def run_det_img():
                 pass
         ###############################################################################
 
-        with col:
+        with col2:
             st.image(img_bboxes, use_column_width=True)  # display input image
 
     elif uploaded_file is None:
