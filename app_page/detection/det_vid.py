@@ -24,69 +24,99 @@ def run_det_vid():
     # file upload
     uploaded_vid = st.file_uploader("Upload a video", ["mp4"])
 
-    # dvide container into two parts
-    _, col1, col2, _ = st.columns([1, 4, 4, 1])
-
-    if uploaded_vid is not None:  # inference
+    if uploaded_vid is not None:
+        # get uploaded file
         tfile = tempfile.NamedTemporaryFile(delete=False)
         tfile.write(uploaded_vid.read())
-        vid_org_path = tfile.name
+        tvid_path = tfile.name
+        vid_path = f"data/{uploaded_vid.name}"
 
+        # dvide container into two parts
+        _, col1, col2, _ = st.columns([1, 4, 4, 1])
         with col1:
             st.markdown('**<div align="center">Input video</div>**', unsafe_allow_html=True)
-            st.video(vid_org_path)  # display input image
+            st.video(tvid_path)  # display input image
         with col2:
             st.markdown('**<div align="center">Output video</div>**', unsafe_allow_html=True)
             videobox = st.empty()
 
-        ###############################################################################
-        # inference results
-        vid_org = cv2.VideoCapture(vid_org_path)
-
+        # wait other inference
         while use_model_list[model_type]:
             time.sleep(0.1)
             videobox.warning("Model is in use!\n Please wait...")
         videobox.empty()
-        # videobox.image("loading.png")
 
-        use_model_list[model_type] = True
+        # read video
+        vid_org = cv2.VideoCapture(tvid_path)
 
-        while True:
-            end_flag, frame_org = vid_org.read()
-            if not end_flag:
-                break
+        # create result video
+        end_flag, frame_org = vid_org.read()
+        total_frame = vid_org.get(7)
+        fourcc = cv2.VideoWriter_fourcc(*"MP4V")
+        out_video = cv2.VideoWriter(
+            vid_path, fourcc, 20.0, (frame_org.shape[1], frame_org.shape[0])
+        )
 
-            with torch.no_grad():
-                if model_type == "yolov5":
-                    from models.yolov5 import yolov5
-
-                    # image preprocessing
-                    frame = yolov5.preprocess_image(frame_org, stride=int(model.stride.max()))
-
-                    # inferencem
-                    pred = model(frame.to(device))[0]
-                    frame_bboxes = yolov5.draw_image_with_boxes(
-                        frame_org, pred, frame.shape[2:], conf=conf_slider, iou=iou_slider
-                    )  # get bboxes and labels
-                elif model_type == "swin_htc":
-                    from mmdet.apis import inference_detector
-
-                    pred = inference_detector(model, frame)
-                    img_bboxes = model.show_result(frame, pred, score_thr=conf_slider)
-                    img_bboxes = cv2.cvtColor(img_bboxes, cv2.COLOR_BGR2RGB)
-                else:
-                    pass
+        # inference
+        use_model_list[model_type] = True  # semaphore
+        try:
             with col2:
-                videobox.image(frame_bboxes, channels="BGR")
+                inference_warning = st.warning("Inference...")
+                progress_bar = st.progress(0)
+            frame_count = 0
+            while uploaded_vid is not None:
+                frame_count += 1
+                end_flag, frame_org = vid_org.read()
+                if not end_flag:  # check vid end
+                    break
+                # inference by frame
+                with torch.no_grad():
+                    if model_type == "yolov5":
+                        from models.yolov5 import yolov5
 
-        use_model_list[model_type] = False
-        ###############################################################################
+                        # image preprocessing
+                        frame = yolov5.preprocess_image(frame_org, stride=int(model.stride.max()))
 
-        # with col2:
-        #     st.video(vid_org_path)  # display input image
+                        # inferencem
+                        pred = model(frame.to(device))[0]
+                        frame_bboxes = yolov5.draw_image_with_boxes(
+                            frame_org, pred, frame.shape[2:], conf=conf_slider, iou=iou_slider
+                        )  # get bboxes and labels
+                    elif model_type == "swin_htc":
+                        from mmdet.apis import inference_detector
 
+                        pred = inference_detector(model, frame_org)
+                        frame_bboxes = model.show_result(frame_org, pred, score_thr=conf_slider)
+                    else:
+                        pass
+                # save frame in result video
+                out_video.write(frame_bboxes)
+
+                # display frame
+                with col2:
+                    inference_warning.warning("Inference... (%d/%d)" % (frame_count, total_frame))
+                    progress_bar.progress(min(frame_count / total_frame, 1.0))
+                    if frame_count % 10 == 0:
+                        frame_bboxes = cv2.cvtColor(frame_bboxes, cv2.COLOR_BGR2RGB)
+                        videobox.image(frame_bboxes)
+        except:  # if error occurs
+            inference_warning.empty()
+            progress_bar.empty()
+            videobox.empty()
+            videobox.warning("Error occurs!\n Please try again.")
+        else:
+            # save result video
+            cv2.destroyAllWindows()
+            out_video.release()
+
+            with col2:
+                inference_warning.empty()
+                progress_bar.empty()
+                videobox.video(vid_path)  # display input image
+        finally:
+            use_model_list[model_type] = False  # semaphore
     elif uploaded_vid is None:
-        st.info("Check the Image format (e.g. mp4)")
+        st.info("Check the Video format (e.g. mp4)")
 
 
 def frame_selector_ui():
