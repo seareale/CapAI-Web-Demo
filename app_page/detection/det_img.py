@@ -56,8 +56,8 @@ def run_det_img():
             elif model_type == "swin_htc":
                 from mmdet.apis import inference_detector
 
-                pred = inference_detector(model, img_path)
-                img_bboxes = model.show_result(img_path, pred, score_thr=conf_slider)
+                pred = inference_detector(model, img_org)
+                img_bboxes = model.show_result(img_org, pred, score_thr=conf_slider)
                 img_bboxes = cv2.cvtColor(img_bboxes, cv2.COLOR_BGR2RGB)
             else:
                 pass
