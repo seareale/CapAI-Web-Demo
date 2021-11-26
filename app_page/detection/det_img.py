@@ -32,6 +32,7 @@ def run_det_img():
         img_path = f"data/{uploaded_file.name}"
         cv2.imwrite(img_path, decoded)
         img_org = cv2.imread(img_path)
+
         img_org = cv2.cvtColor(img_org, cv2.COLOR_BGR2RGB)
         with col1:
             st.markdown('**<div align="center">Input image</div>**', unsafe_allow_html=True)
@@ -50,15 +51,33 @@ def run_det_img():
 
                 # inferencem
                 pred = model(img.to(device))[0]
+
+                # resize
+                rate = min(383 / img_org.shape[0], 383 / img_org.shape[1])
+                if img_org.shape[0] < 383 or img_org.shape[1] < 383:
+                    img_org = cv2.resize(
+                        img_org,
+                        (int(img_org.shape[1] * rate), int(img_org.shape[0] * rate)),
+                        interpolation=cv2.INTER_LINEAR,
+                    )
+
                 img_bboxes = yolov5.draw_image_with_boxes(
                     img_org, pred, img.shape[2:], conf=conf_slider, iou=iou_slider
                 )  # get bboxes and labels
             elif model_type == "swin_htc":
                 from mmdet.apis import inference_detector
 
+                # resize
+                rate = min(512 / img_org.shape[0], 512 / img_org.shape[1])
+                if img_org.shape[0] < 512 or img_org.shape[1] < 512:
+                    img_org = cv2.resize(
+                        img_org,
+                        (int(img_org.shape[1] * rate), int(img_org.shape[0] * rate)),
+                        interpolation=cv2.INTER_LINEAR,
+                    )
+
                 pred = inference_detector(model, img_org)
                 img_bboxes = model.show_result(img_org, pred, score_thr=conf_slider)
-                img_bboxes = cv2.cvtColor(img_bboxes, cv2.COLOR_BGR2RGB)
             else:
                 pass
         ###############################################################################
@@ -119,11 +138,11 @@ def load_model(model_name="yolov5", half=True):
         ###############################################################################
         if model_name == "yolov5":
             model = torch.load(path, map_location=device)["model"].float()
-        elif model_name == "swin_htc":
+        elif "swin" in model_name:
             from mmcv import Config
             from mmdet.apis import init_detector
 
-            config = "models/swin_htc/htc_swin_cascade_fpn.py"
+            config = f"models/swin_htc/{model_name}.py"
             classes = Config.fromfile(config).classes
             model = init_detector(config, path, device=device)
             model.CLASSES = classes

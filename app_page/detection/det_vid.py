@@ -79,11 +79,30 @@ def run_det_vid():
 
                         # inferencem
                         pred = model(frame.to(device))[0]
+
+                        # resize
+                        rate = min(383 / frame_org.shape[0], 383 / frame_org.shape[1])
+                        if frame_org.shape[0] < 383 or frame_org.shape[1] < 383:
+                            frame_org = cv2.resize(
+                                frame_org,
+                                (int(frame_org.shape[1] * rate), int(frame_org.shape[0] * rate)),
+                                interpolation=cv2.INTER_LINEAR,
+                            )
+
                         frame_bboxes = yolov5.draw_image_with_boxes(
                             frame_org, pred, frame.shape[2:], conf=conf_slider, iou=iou_slider
                         )  # get bboxes and labels
                     elif model_type == "swin_htc":
                         from mmdet.apis import inference_detector
+
+                        # resize
+                        rate = min(512 / frame_org.shape[0], 512 / frame_org.shape[1])
+                        if frame_org.shape[0] < 512 or frame_org.shape[1] < 512:
+                            frame_org = cv2.resize(
+                                frame_org,
+                                (int(frame_org.shape[1] * rate), int(frame_org.shape[0] * rate)),
+                                interpolation=cv2.INTER_LINEAR,
+                            )
 
                         pred = inference_detector(model, frame_org)
                         frame_bboxes = model.show_result(frame_org, pred, score_thr=conf_slider)
@@ -168,11 +187,11 @@ def load_model(model_name="yolov5", half=True):
         ###############################################################################
         if model_name == "yolov5":
             model = torch.load(path, map_location=device)["model"].float()
-        elif model_name == "swin_htc":
+        elif "swin" in model_name:
             from mmcv import Config
             from mmdet.apis import init_detector
 
-            config = "models/swin_htc/htc_swin_cascade_fpn.py"
+            config = f"models/swin_htc/{model_name}.py"
             classes = Config.fromfile(config).classes
             model = init_detector(config, path, device=device)
             model.CLASSES = classes

@@ -4,16 +4,13 @@ import torch
 import torchvision
 
 # config
-IMG_SIZE = 1280
+IMG_SIZE = 383
 
 LABELS = {
-    0: "paper",
-    1: "paperpack",
-    2: "can",
-    3: "glass",
-    4: "pet",
-    5: "plastic",
-    6: "vinyl",
+    0: "01_ulcer",
+    1: "02_mass",
+    2: "04_lymph",
+    3: "05_bleeding",
 }
 
 COLOR = {
@@ -21,11 +18,10 @@ COLOR = {
     1: (0, 255, 0),
     2: (0, 0, 255),
     3: (122, 122, 0),
-    4: (0, 122, 122),
-    5: (122, 0, 122),
-    6: (102, 34, 84),
+    # 4: (0, 122, 122),
+    # 5: (122, 0, 122),
+    # 6: (102, 34, 84),
 }
-
 
 
 def draw_image_with_boxes(image, pred, pred_img_shape, conf=0.6, iou=0.8):
