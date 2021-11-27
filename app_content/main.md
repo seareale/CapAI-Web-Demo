@@ -12,8 +12,8 @@ This project demonstrates object detection models([YOLOv5](https://github.com/ul
 ### Run
 ```bash
 # To run this demo
-$ git clone https://github.com/seareale/torch_deploy.git
-$ cd torch_deploy
+$ git clone https://github.com/seareale/web-demo-streamlit.git
+$ cd web-demo-streamlit
 $ pip install -r requirements.txt
 $ streamlit run main.py
 ```
