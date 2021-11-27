@@ -92,7 +92,7 @@ def run_det_vid():
                         frame_bboxes = yolov5.draw_image_with_boxes(
                             frame_org, pred, frame.shape[2:], conf=conf_slider, iou=iou_slider
                         )  # get bboxes and labels
-                    elif model_type == "swin_htc":
+                    elif "swin" in model_type:
                         from mmdet.apis import inference_detector
 
                         # resize
@@ -131,7 +131,7 @@ def run_det_vid():
             with col2:
                 inference_warning.empty()
                 progress_bar.empty()
-                videobox.video(vid_path)  # display input image
+                videobox.video(vid_path)  # display result video
         finally:
             use_model_list[model_type] = False  # semaphore
     elif uploaded_vid is None:
@@ -140,11 +140,11 @@ def run_det_vid():
 
 def frame_selector_ui():
     model_list = list(Path("models/weights").glob("*.pt"))
-    model_list = sorted([str(model.name)[:-3] for model in model_list])
+    model_list = sorted([str(model.name)[:-3] for model in model_list], reverse=True)
 
     st.sidebar.markdown("# Options")
 
-    model_type = st.sidebar.selectbox("Select model", model_list, 1)
+    model_type = st.sidebar.selectbox("Select model", model_list, 0)
 
     conf_slider = st.sidebar.slider(
         "conf threshold", min_value=0.0, max_value=1.0, value=0.6, step=0.01
@@ -191,7 +191,7 @@ def load_model(model_name="yolov5", half=True):
             from mmcv import Config
             from mmdet.apis import init_detector
 
-            config = f"models/swin_htc/{model_name}.py"
+            config = f"models/{model_name}/{model_name}.py"
             classes = Config.fromfile(config).classes
             model = init_detector(config, path, device=device)
             model.CLASSES = classes
