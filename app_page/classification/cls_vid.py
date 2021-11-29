@@ -22,7 +22,7 @@ import time
 
 load_model_list = {}
 
-def run_cls_vid():
+def run_cls_default():
     st.title("Transition Classification")
     model_type = frame_selector_ui()
 
