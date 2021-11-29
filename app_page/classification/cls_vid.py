@@ -19,6 +19,7 @@ from sklearn.metrics import confusion_matrix
 from PIL import Image
 import GPUtil
 import time
+from torchvision.models import *
 
 load_model_list = {}
 
@@ -175,6 +176,7 @@ def frame_selector_ui():
     return model_type
 
 
+
 def load_model(model_name="efficientnet"):
     device = torch.device("cuda:0")
 
@@ -184,10 +186,18 @@ def load_model(model_name="efficientnet"):
         return load_model_list[model_name], device
 
     if model_name == "efficientnet":
-        net = EfficientNet.from_pretrained("efficientnet-b5", num_classes=4)
+        net = EfficientNet.from_name("efficientnet-b5", num_classes=4)
         net = net.to(device)
         net = torch.nn.DataParallel(net)
         cudnn.benchmark = True
+        checkpoint = torch.load(path)
+        net.load_state_dict(checkpoint["net"])
+        net.eval()
+    
+    elif model_name == 'resnext':
+        net = resnext50_32x4d(num_classes=4)
+        net = net.to(device)
+        net = torch.nn.DataParallel(net)
         checkpoint = torch.load(path)
         net.load_state_dict(checkpoint["net"])
         net.eval()
