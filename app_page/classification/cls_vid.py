@@ -22,6 +22,7 @@ import time
 
 load_model_list = {}
 
+
 def run_cls_default():
     st.title("Transition Classification")
     model_type = frame_selector_ui()
@@ -35,9 +36,10 @@ def run_cls_default():
     col1, col2 = st.columns([1, 2])
     with col1:
         position = st.radio('Select the position', ['ALL', '06.stomach', '07.intestineSS', "08.intestineSF", "09.intestineL"], key=1)
-    
+
     if position:
         with col2:
+            
             if position == "ALL":
                 position = '*'
             x = glob(f"{Path}{position}/*")
@@ -59,6 +61,7 @@ def run_cls_default():
 
         x = sorted(x)
         st.markdown('---')
+        ################################################################################################################
 
         col1, col2 = st.columns([1, 2])
         with col1:
@@ -69,7 +72,7 @@ def run_cls_default():
             option = st.selectbox('', x)
             if option:
                 imgs = sorted(glob(f"{Path}{option}/*.jpg"))
-                fig, ax = plt.subplots(2, 5, figsize=(10, 5))
+                fig, ax = plt.subplots(2, 5, figsize=(10, 4))
                 for i, ax in enumerate(fig.axes):
                     ax.imshow(cv2.cvtColor(cv2.imread(imgs[i]), cv2.COLOR_BGR2RGB))
                     ax.axes.xaxis.set_visible(False)
@@ -78,32 +81,63 @@ def run_cls_default():
 
         
         st.markdown('---')
-        st.markdown('## Output')
+        ################################################################################################################
+
 
         testset = CapAI(x)
         testloader = torch.utils.data.DataLoader(
                 testset, batch_size=10, shuffle=False, num_workers=2)
 
+
         with torch.no_grad():
             y_true = []
             y_pred = []
-
+            y_true_voting = []
+            y_pred_voting = []
             for i, (inputs, labels) in enumerate(testloader):
                 inputs = inputs.to(device)
                 outputs = net(inputs)
                 _, predicted = outputs.max(1)
                 y_true.append(list(np.array(labels.cpu()))[0])
                 y_pred.append(Counter(list(predicted.cpu().numpy())).most_common()[0][0])
-            
-            CM = confusion_matrix(y_true, y_pred)
-            plot_confusion_matrix(CM, target_names=label_names)
+                if i == x.index(option):
+                    y_true_voting.extend(list(np.array(labels.cpu())))
+                    y_pred_voting.extend(list(predicted.cpu().numpy()))
+
+        CM = confusion_matrix(y_true, y_pred, labels = [[i for i in range(len(label_names))]])
+        plot_confusion_matrix(CM, target_names=label_names)
+        
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.markdown('## Output')
+            st.markdown('### Confusion Matrix')
             image = Image.open('Confusion_matrix.png')
             st.image(image)
-            os.remove('Confusion_matrix.png')
+        
+        with col2:
+            st.markdown('## Voting Results')
+            st.markdown(f'### Ground Truth : {label_names[y_true[x.index(option)]]}   |  Predict : {label_names[y_pred[x.index(option)]]}')
+            if option:
+                imgs = sorted(glob(f"{Path}{option}/*.jpg"))
+                fig, ax = plt.subplots(2, 5, figsize=(10, 4))
+                for i, ax in enumerate(fig.axes):
+                    ax.imshow(cv2.cvtColor(cv2.imread(imgs[i]), cv2.COLOR_BGR2RGB))
+                    ax.axes.xaxis.set_ticks([])
+                    ax.axes.yaxis.set_visible(False)
+                    if y_true_voting[i] == y_pred_voting[i]:
+                        ax.set_xlabel('O',color='green')
+                    else:
+                        ax.set_xlabel('X (%d -> %d)'%(y_true_voting[i], y_pred_voting[i]), color = 'red')
 
+                st.pyplot(fig)
+        ################################################################################################################
+  
+        os.remove('Confusion_matrix.png')
         st.markdown('---')
 
        
+
+
 
 
         '''
