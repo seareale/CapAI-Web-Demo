@@ -3,7 +3,7 @@
 
 <br/>
 
-This project demonstrates object detection models([YOLOv5](https://github.com/ultralytics/yolov5), [Swin Transformer](https://github.com/SwinTransformer/Swin-Transformer-Object-Detection)) and classification model([EfficientNet](https://github.com/lukemelas/EfficientNet-PyTorch)) into an interactive [Streamlit](https://streamlit.io) app.
+This project demonstrates object detection models([YOLOv5](https://github.com/ultralytics/yolov5), [Swin Transformer](https://github.com/SwinTransformer/Swin-Transformer-Object-Detection)) and classification model([EfficientNet](https://github.com/lukemelas/EfficientNet-PyTorch), [ResNeXt](https://arxiv.org/pdf/1611.05431.pdf)) into an interactive [Streamlit](https://streamlit.io) app.
 
 👈 **Please select "Lesion detection" or "Transition classification" in the sidebar to start.**
 

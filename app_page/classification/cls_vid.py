@@ -17,7 +17,6 @@ from glob import glob
 from collections import Counter
 from sklearn.metrics import confusion_matrix
 from PIL import Image
-import GPUtil
 import time
 from torchvision.models import *
 
@@ -141,25 +140,7 @@ def run_cls_default():
 
 
 
-        '''
-        
-        fig, ax = plt.subplots()
-        GPUs = GPUtil.getGPUs()
-        x = [0, 1, 2, 3]
-        y = [int(gpu.load*100) for gpu in GPUs]
-        bar = ax.bar(x, y)
-        the_plot = st.pyplot(fig)
-        time.sleep(1)
-        while True:
-            GPUs = GPUtil.getGPUs()
-            x = [0, 1, 2, 3]
-            y = [int(gpu.load*100) for gpu in GPUs]
-            bar.remove()
-            bar = ax.bar(x,y)
-            the_plot.pyplot(fig)
-            time.sleep(1)
        
-        '''
 
 
     
