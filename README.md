@@ -1,11 +1,9 @@
-# web-demo-streamlit
+# CapAI Web Demo
+- This project demonstrates object detection models([YOLOv5](https://github.com/ultralytics/yolov5), [Swin Transformer](https://github.com/SwinTransformer/Swin-Transformer-Object-Detection)) and classification model([EfficientNet](https://github.com/lukemelas/EfficientNet-PyTorch), [ResNeXt](https://arxiv.org/pdf/1611.05431.pdf)) into an interactive [Streamlit](https://streamlit.io) app.
 
 <br/>
 
-This project demonstrates object detection models([YOLOv5](https://github.com/ultralytics/yolov5), [Swin Transformer](https://github.com/SwinTransformer/Swin-Transformer-Object-Detection)) and classification model([EfficientNet](https://github.com/lukemelas/EfficientNet-PyTorch), [ResNeXt](https://arxiv.org/pdf/1611.05431.pdf)) into an interactive [Streamlit](https://streamlit.io) app.
-
-<br/>
-
+# Getting Started
 ## Run
 ```bash
 # To run this demo
@@ -24,14 +22,40 @@ $ mim install mmdet
 # for yolov5
 $ pip install -r requirements.txt
 ```
+<br/>
+<br/>
+<br/>
 
+# Lesion Detection
+ Empty
+
+<br/>
+<br/>
+<br/>
+
+
+# Transition Classification
+## Default dataset
+- Prediction result for the default testset.
+- Confusion matrix for results.
+- Possible to select the specific class and patientID.
+
+![](app_content/classification_default.gif)
+<br/>
+
+
+
+## Upload image
+- Prediction result with uploading the image.  
+
+![](app_content/classification_upload.gif)
 <br/>
 
 ---
 
 <br/>
 
-<p align='center'><img src = 'logo.png' width = '150'>
+<p align='center'><img src = 'logo.png' width = '400'>
 
 
 **<div align="center">made by [Seareale](https://github.com/seareale), [Jaebbb](https://github.com/jaebbb) | [KVL Lab](http://vl.knu.ac.kr) | [KNU](http://knu.ac.kr)</div>**
