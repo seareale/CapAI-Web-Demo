@@ -27,7 +27,11 @@ $ pip install -r requirements.txt
 <br/>
 
 # Lesion Detection
- Empty
+### Upload data
+- Possible to modulate confidence and IoU threshold value.
+- Output is image or video according to the type of input.
+
+![](app_content/detection.gif)
 
 <br/>
 <br/>
@@ -35,7 +39,7 @@ $ pip install -r requirements.txt
 
 
 # Transition Classification
-## Default dataset
+### Default dataset
 - Prediction result for the default testset.
 - Confusion matrix for results.
 - Possible to select the specific class and patientID.
@@ -45,7 +49,7 @@ $ pip install -r requirements.txt
 
 
 
-## Upload image
+### Upload image
 - Prediction result with uploading the image.  
 
 ![](app_content/classification_upload.gif)
