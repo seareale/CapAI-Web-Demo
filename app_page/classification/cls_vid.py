@@ -111,7 +111,7 @@ def run_cls_default():
         with col1:
             st.markdown('## Output')
             st.markdown('### Confusion Matrix')
-            image = Image.open('Confusion_matrix.png')
+            image = Image.open('data/Confusion_matrix.png')
             st.image(image)
         
         with col2:
@@ -132,7 +132,7 @@ def run_cls_default():
                 st.pyplot(fig)
         ################################################################################################################
   
-        os.remove('Confusion_matrix.png')
+        os.remove('data/Confusion_matrix.png')
         st.markdown('---')
 
        

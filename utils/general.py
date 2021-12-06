@@ -49,4 +49,4 @@ def plot_confusion_matrix(cm, target_names=None, cmap=None, normalize=True, labe
     plt.ylabel('True label')
     plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
     plt.gcf().subplots_adjust(bottom=0.10)
-    plt.savefig(f"{title}.png")
+    plt.savefig(f"data/{title}.png")

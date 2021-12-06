@@ -1,11 +1,9 @@
-import os
 import sys
 import tempfile
 import time
 from pathlib import Path
 
 import cv2
-import numpy as np
 import nvidia_smi
 import streamlit as st
 import torch
@@ -127,6 +125,8 @@ def run_det_vid():
             # save result video
             cv2.destroyAllWindows()
             out_video.release()
+
+            time.sleep(1)
 
             with col2:
                 inference_warning.empty()
