@@ -52,7 +52,7 @@ def run_det_vid():
         # create result video
         end_flag, frame_org = vid_org.read()
         total_frame = vid_org.get(7)
-        fourcc = cv2.VideoWriter_fourcc(*"VP80")
+        fourcc = cv2.VideoWriter_fourcc(*"VP80")  # HTML5 - mp4v issue
         out_video = cv2.VideoWriter(
             vid_path, fourcc, 20, (frame_org.shape[1], frame_org.shape[0])
         )
