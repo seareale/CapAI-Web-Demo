@@ -1,9 +1,11 @@
+import os
 import sys
 import tempfile
 import time
 from pathlib import Path
 
 import cv2
+import numpy as np
 import nvidia_smi
 import streamlit as st
 import torch
@@ -27,7 +29,7 @@ def run_det_vid():
         tfile = tempfile.NamedTemporaryFile(delete=False)
         tfile.write(uploaded_vid.read())
         tvid_path = tfile.name
-        vid_path = f"data/{uploaded_vid.name}"
+        vid_path = f"data/{uploaded_vid.name[:-4]}_inference.webm"
 
         # dvide container into two parts
         _, col1, col2, _ = st.columns([1, 4, 4, 1])
@@ -50,9 +52,9 @@ def run_det_vid():
         # create result video
         end_flag, frame_org = vid_org.read()
         total_frame = vid_org.get(7)
-        fourcc = cv2.VideoWriter_fourcc(*"MP4V")
+        fourcc = cv2.VideoWriter_fourcc(*"VP80")
         out_video = cv2.VideoWriter(
-            vid_path, fourcc, 20.0, (frame_org.shape[1], frame_org.shape[0])
+            vid_path, fourcc, 20, (frame_org.shape[1], frame_org.shape[0])
         )
 
         # inference
@@ -123,10 +125,8 @@ def run_det_vid():
             videobox.warning("Error occurs!\n Please try again.")
         else:
             # save result video
-            cv2.destroyAllWindows()
+            # cv2.destroyAllWindows()
             out_video.release()
-
-            time.sleep(1)
 
             with col2:
                 inference_warning.empty()
