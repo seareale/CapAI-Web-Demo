@@ -32,6 +32,7 @@ def run_det_img():
         img_path = f"data/{uploaded_file.name}"
         cv2.imwrite(img_path, decoded)
         img_org = cv2.imread(img_path)
+        img_for_yolo = img_org.copy()
 
         img_org = cv2.cvtColor(img_org, cv2.COLOR_BGR2RGB)
         with col1:
@@ -47,14 +48,14 @@ def run_det_img():
                 from models.yolov5 import yolov5
 
                 # image preprocessing
-                img = yolov5.preprocess_image(img_org, stride=int(model.stride.max()))
+                img = yolov5.preprocess_image(img_for_yolo, stride=int(model.stride.max()))
 
-                # inferencem
+                # inference
                 pred = model(img.to(device))[0]
 
                 # resize
-                rate = min(383 / img_org.shape[0], 383 / img_org.shape[1])
-                if img_org.shape[0] < 383 or img_org.shape[1] < 383:
+                rate = min(384 / img_org.shape[0], 384 / img_org.shape[1])
+                if img_org.shape[0] < 384 or img_org.shape[1] < 384:
                     img_org = cv2.resize(
                         img_org,
                         (int(img_org.shape[1] * rate), int(img_org.shape[0] * rate)),

@@ -4,15 +4,17 @@ PyTorch utils
 """
 
 import datetime
+import logging
 import math
 import os
+import platform
+import subprocess
 import time
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 
 import torch
-import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
@@ -23,7 +25,6 @@ try:
 except ImportError:
     thop = None
 
-# LOGGER = logging.getLogger(__name__)
 
 @contextmanager
 def torch_distributed_zero_first(local_rank: int):
@@ -37,31 +38,31 @@ def torch_distributed_zero_first(local_rank: int):
         dist.barrier(device_ids=[0])
 
 
-def init_torch_seeds(seed=0):
-    torch.manual_seed(seed)
-    if seed == 0:  # slower, more reproducible
-        cudnn.benchmark, cudnn.deterministic = False, True
-    else:  # faster, less reproducible
-        cudnn.benchmark, cudnn.deterministic = True, False
-
-
 def date_modified(path=__file__):
     # return human-readable file modification date, i.e. '2021-3-26'
     t = datetime.datetime.fromtimestamp(Path(path).stat().st_mtime)
     return f'{t.year}-{t.month}-{t.day}'
 
 
+def git_describe(path=Path(__file__).parent):  # path must be a directory
+    # return human-readable git description, i.e. v5.0-5-g3e25f1e https://git-scm.com/docs/git-describe
+    s = f'git -C {path} describe --tags --long --always'
+    try:
+        return subprocess.check_output(s, shell=True, stderr=subprocess.STDOUT).decode()[:-1]
+    except subprocess.CalledProcessError as e:
+        return ''  # not a git repository
+
+
 def select_device(device='', batch_size=None):
     # device = 'cpu' or '0' or '0,1,2,3'
-    s = f'YOLOv5 🚀 {date_modified()} torch {torch.__version__} '  # string
+    s = f'YOLOv5 🚀 {git_describe() or date_modified()} torch {torch.__version__} '  # string
     device = str(device).strip().lower().replace('cuda:', '')  # to string, 'cuda:0' to '0'
     cpu = device == 'cpu'
     if cpu:
-        pass
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
-    elif device:  # non-cpu device
+    elif device:  # non-cpu device requested
         os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable
-        assert torch.cuda.is_available(), f'CUDA unavailable, invalid device {device}'  # check availability
+        assert torch.cuda.is_available(), f'CUDA unavailable, invalid device {device} requested'  # check availability
 
     cuda = not cpu and torch.cuda.is_available()
     if cuda:
@@ -76,7 +77,6 @@ def select_device(device='', batch_size=None):
     else:
         s += 'CPU\n'
 
-    # LOGGER.info(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)  # emoji-safe
     return torch.device('cuda:0' if cuda else 'cpu')
 
 
@@ -123,7 +123,7 @@ def profile(input, ops, n=10, device=None):
                         _ = (sum([yi.sum() for yi in y]) if isinstance(y, list) else y).sum().backward()
                         t[2] = time_sync()
                     except Exception as e:  # no backward method
-                        print(e)
+                        # print(e)  # for debug
                         t[2] = float('nan')
                     tf += (t[1] - t[0]) * 1000 / n  # ms per op forward
                     tb += (t[2] - t[1]) * 1000 / n  # ms per op backward
@@ -182,7 +182,7 @@ def sparsity(model):
 
 
 def prune(model, amount=0.3):
-    # Prune model to global sparsity
+    # Prune model to requested global sparsity
     import torch.nn.utils.prune as prune
     print('Pruning model... ', end='')
     for name, m in model.named_modules():
@@ -193,6 +193,7 @@ def prune(model, amount=0.3):
 
 
 def fuse_conv_and_bn(conv, bn):
+    # Fuse convolution and batchnorm layers https://tehnokv.com/posts/fusing-batchnorm-and-conv/
     fusedconv = nn.Conv2d(conv.in_channels,
                           conv.out_channels,
                           kernel_size=conv.kernel_size,
@@ -235,7 +236,6 @@ def model_info(model, verbose=False, img_size=640):
     except (ImportError, Exception):
         fs = ''
 
-    # LOGGER.info(f"Model Summary: {len(list(model.modules()))} layers, {n_p} parameters, {n_g} gradients{fs}")
 
 
 def load_classifier(name='resnet101', n=2):
@@ -294,13 +294,20 @@ class EarlyStopping:
         delta = epoch - self.best_epoch  # epochs without improvement
         self.possible_stop = delta >= (self.patience - 1)  # possible stop may occur next epoch
         stop = delta >= self.patience  # stop training if patience exceeded
-        if stop:
-            pass
-            # LOGGER.info(f'EarlyStopping patience {self.patience} exceeded, stopping training.')
+
         return stop
 
 
 class ModelEMA:
+    """ Model Exponential Moving Average from https://github.com/rwightman/pytorch-image-models
+    Keep a moving average of everything in the model state_dict (parameters and buffers).
+    This is intended to allow functionality like
+    https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage
+    A smoothed version of the weights is necessary for some training schemes to perform well.
+    This class is sensitive where it is initialized in the sequence of model init,
+    GPU assignment and distributed training wrappers.
+    """
+
     def __init__(self, model, decay=0.9999, updates=0):
         # Create EMA
         self.ema = deepcopy(model.module if is_parallel(model) else model).eval()  # FP32 EMA

@@ -5,9 +5,21 @@ Common modules
 
 import math
 import warnings
+from copy import copy
+from pathlib import Path
 
+import numpy as np
+import pandas as pd
+import requests
 import torch
 import torch.nn as nn
+from PIL import Image
+from torch.cuda import amp
+
+from models.yolo_format import exif_transpose, letterbox
+from models.general import increment_path, make_divisible, non_max_suppression, save_one_box, \
+    scale_coords, xyxy2xywh
+from models.torch_utils import time_sync
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -15,6 +27,7 @@ def autopad(k, p=None):  # kernel, padding
     if p is None:
         p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
     return p
+
 
 class Conv(nn.Module):
     # Standard convolution
@@ -38,6 +51,7 @@ class DWConv(Conv):
 
 
 class TransformerLayer(nn.Module):
+    # Transformer layer https://arxiv.org/abs/2010.11929 (LayerNorm layers removed for better performance)
     def __init__(self, c, num_heads):
         super().__init__()
         self.q = nn.Linear(c, c, bias=False)
@@ -54,6 +68,7 @@ class TransformerLayer(nn.Module):
 
 
 class TransformerBlock(nn.Module):
+    # Vision Transformer https://arxiv.org/abs/2010.11929
     def __init__(self, c1, c2, num_heads, num_layers):
         super().__init__()
         self.conv = None
@@ -85,6 +100,7 @@ class Bottleneck(nn.Module):
 
 
 class BottleneckCSP(nn.Module):
+    # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
@@ -142,6 +158,7 @@ class C3Ghost(C3):
 
 
 class SPP(nn.Module):
+    # Spatial Pyramid Pooling (SPP) layer https://arxiv.org/abs/1406.4729
     def __init__(self, c1, c2, k=(5, 9, 13)):
         super().__init__()
         c_ = c1 // 2  # hidden channels
@@ -187,6 +204,7 @@ class Focus(nn.Module):
 
 
 class GhostConv(nn.Module):
+    # Ghost Convolution https://github.com/huawei-noah/ghostnet
     def __init__(self, c1, c2, k=1, s=1, g=1, act=True):  # ch_in, ch_out, kernel, stride, groups
         super().__init__()
         c_ = c2 // 2  # hidden channels
@@ -199,6 +217,7 @@ class GhostConv(nn.Module):
 
 
 class GhostBottleneck(nn.Module):
+    # Ghost Bottleneck https://github.com/huawei-noah/ghostnet
     def __init__(self, c1, c2, k=3, s=1):  # ch_in, ch_out, kernel, stride
         super().__init__()
         c_ = c2 // 2
@@ -248,3 +267,86 @@ class Concat(nn.Module):
 
     def forward(self, x):
         return torch.cat(x, self.d)
+
+
+class AutoShape(nn.Module):
+    # YOLOv5 input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS
+    conf = 0.25  # NMS confidence threshold
+    iou = 0.45  # NMS IoU threshold
+    classes = None  # (optional list) filter by class, i.e. = [0, 15, 16] for COCO persons, cats and dogs
+    multi_label = False  # NMS multiple labels per box
+    max_det = 1000  # maximum number of detections per image
+
+    def __init__(self, model):
+        super().__init__()
+        self.model = model.eval()
+
+    def autoshape(self):
+        return self
+
+    def _apply(self, fn):
+        # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
+        self = super()._apply(fn)
+        m = self.model.model[-1]  # Detect()
+        m.stride = fn(m.stride)
+        m.grid = list(map(fn, m.grid))
+        if isinstance(m.anchor_grid, list):
+            m.anchor_grid = list(map(fn, m.anchor_grid))
+        return self
+
+    @torch.no_grad()
+    def forward(self, imgs, size=640, augment=False, profile=False):
+        # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
+        #   file:       imgs = 'data/images/zidane.jpg'  # str or PosixPath
+        #   URI:             = 'https://ultralytics.com/images/zidane.jpg'
+        #   OpenCV:          = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(640,1280,3)
+        #   PIL:             = Image.open('image.jpg') or ImageGrab.grab()  # HWC x(640,1280,3)
+        #   numpy:           = np.zeros((640,1280,3))  # HWC
+        #   torch:           = torch.zeros(16,3,320,640)  # BCHW (scaled to size=640, 0-1 values)
+        #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
+
+        t = [time_sync()]
+        p = next(self.model.parameters())  # for device and type
+        if isinstance(imgs, torch.Tensor):  # torch
+            with amp.autocast(enabled=p.device.type != 'cpu'):
+                return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
+
+        # Pre-process
+        n, imgs = (len(imgs), imgs) if isinstance(imgs, list) else (1, [imgs])  # number of images, list of images
+        shape0, shape1, files = [], [], []  # image and inference shapes, filenames
+        for i, im in enumerate(imgs):
+            f = f'image{i}'  # filename
+            if isinstance(im, (str, Path)):  # filename or uri
+                im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith('http') else im), im
+                im = np.asarray(exif_transpose(im))
+            elif isinstance(im, Image.Image):  # PIL Image
+                im, f = np.asarray(exif_transpose(im)), getattr(im, 'filename', f) or f
+            files.append(Path(f).with_suffix('.jpg').name)
+            if im.shape[0] < 5:  # image in CHW
+                im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
+            im = im[..., :3] if im.ndim == 3 else np.tile(im[..., None], 3)  # enforce 3ch input
+            s = im.shape[:2]  # HWC
+            shape0.append(s)  # image shape
+            g = (size / max(s))  # gain
+            shape1.append([y * g for y in s])
+            imgs[i] = im if im.data.contiguous else np.ascontiguousarray(im)  # update
+        shape1 = [make_divisible(x, int(self.stride.max())) for x in np.stack(shape1, 0).max(0)]  # inference shape
+        x = [letterbox(im, new_shape=shape1, auto=False)[0] for im in imgs]  # pad
+        x = np.stack(x, 0) if n > 1 else x[0][None]  # stack
+        x = np.ascontiguousarray(x.transpose((0, 3, 1, 2)))  # BHWC to BCHW
+        x = torch.from_numpy(x).to(p.device).type_as(p) / 255.  # uint8 to fp16/32
+        t.append(time_sync())
+
+        with amp.autocast(enabled=p.device.type != 'cpu'):
+            # Inference
+            y = self.model(x, augment, profile)[0]  # forward
+            t.append(time_sync())
+
+            # Post-process
+            y = non_max_suppression(y, self.conf, iou_thres=self.iou, classes=self.classes,
+                                    multi_label=self.multi_label, max_det=self.max_det)  # NMS
+            for i in range(n):
+                scale_coords(shape1, y[i][:, :4], shape0[i])
+
+            t.append(time_sync())
+            return Detections(imgs, y, files, t, self.names, x.shape)
