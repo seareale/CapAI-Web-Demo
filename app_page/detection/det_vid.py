@@ -81,8 +81,8 @@ def run_det_vid():
                         pred = model(frame.to(device))[0]
 
                         # resize
-                        rate = min(383 / frame_org.shape[0], 383 / frame_org.shape[1])
-                        if frame_org.shape[0] < 383 or frame_org.shape[1] < 383:
+                        rate = min(384 / frame_org.shape[0], 384 / frame_org.shape[1])
+                        if frame_org.shape[0] < 384 or frame_org.shape[1] < 384:
                             frame_org = cv2.resize(
                                 frame_org,
                                 (int(frame_org.shape[1] * rate), int(frame_org.shape[0] * rate)),
