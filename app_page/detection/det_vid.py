@@ -22,7 +22,7 @@ def run_det_vid():
     model, device = load_model(model_name=model_type)
 
     # file upload
-    uploaded_vid = st.file_uploader("Upload a video", ["mp4"])
+    uploaded_vid = st.file_uploader("Upload a video", ["mp4","avi","mpg"])
 
     if uploaded_vid is not None:
         # get uploaded file
@@ -135,7 +135,7 @@ def run_det_vid():
         finally:
             use_model_list[model_type] = False  # semaphore
     elif uploaded_vid is None:
-        st.info("Check the Video format (e.g. mp4)")
+        st.info("Check the Video format (e.g. mp4, avi, mpg)")
 
 
 def frame_selector_ui():
