@@ -22,14 +22,14 @@ def run_det_vid():
     model, device = load_model(model_name=model_type)
 
     # file upload
-    uploaded_vid = st.file_uploader("Upload a video", ["mp4","avi","mpg"])
+    uploaded_vid = st.file_uploader("Upload a video", ["mp4","avi","mpg","webm"])
 
     if uploaded_vid is not None:
         # get uploaded file
         tfile = tempfile.NamedTemporaryFile(delete=False)
         tfile.write(uploaded_vid.read())
         tvid_path = tfile.name
-        vid_path = f"data/{uploaded_vid.name[:-4]}_inference.webm"
+        vid_path = f"data/{uploaded_vid.name.split('.')[0]}_inference.webm"
 
         # dvide container into two parts
         _, col1, col2, _ = st.columns([1, 4, 4, 1])
@@ -52,9 +52,10 @@ def run_det_vid():
         # create result video
         end_flag, frame_org = vid_org.read()
         total_frame = vid_org.get(7)
+        frame_rate = vid_org.get(cv2.CAP_PROP_FPS)
         fourcc = cv2.VideoWriter_fourcc(*"VP80")  # HTML5 - mp4v issue
         out_video = cv2.VideoWriter(
-            vid_path, fourcc, 20, (frame_org.shape[1], frame_org.shape[0])
+            vid_path, fourcc, frame_rate, (384, 384)
         )
 
         # inference
@@ -108,6 +109,7 @@ def run_det_vid():
                         frame_bboxes = model.show_result(frame_org, pred, score_thr=conf_slider)
                     else:
                         pass
+
                 # save frame in result video
                 out_video.write(frame_bboxes)
 
