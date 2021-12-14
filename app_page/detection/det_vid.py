@@ -51,11 +51,12 @@ def run_det_vid():
 
         # create result video
         end_flag, frame_org = vid_org.read()
-        total_frame = vid_org.get(7)
+        total_frame = vid_org.get(cv2.CAP_PROP_FRAME_COUNT)
         frame_rate = vid_org.get(cv2.CAP_PROP_FPS)
+        video_size = ( max(frame_org.shape[1], 384) , max(frame_org.shape[0], 384))
         fourcc = cv2.VideoWriter_fourcc(*"VP80")  # HTML5 - mp4v issue
         out_video = cv2.VideoWriter(
-            vid_path, fourcc, frame_rate, (384, 384)
+            vid_path, fourcc, frame_rate, video_size
         )
 
         # inference
@@ -119,8 +120,8 @@ def run_det_vid():
                     progress_bar.progress(min(frame_count / total_frame, 1.0))
                     if frame_count % 10 == 0:
                         frame_bboxes = cv2.cvtColor(frame_bboxes, cv2.COLOR_BGR2RGB)
-                        videobox.image(frame_bboxes)
-        except:  # if error occurs
+                        videobox.image(frame_bboxes, use_column_width=True)
+        except Exception as e:  # if error occurs
             inference_warning.empty()
             progress_bar.empty()
             videobox.empty()
